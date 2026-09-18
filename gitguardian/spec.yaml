@@ -5,23 +5,15 @@ kind: mixin
 name: gitguardian
 version: "0.1.0"
 displayName: GitGuardian (ggshield)
-description: Installs the GitGuardian CLI (ggshield) with proxy-injected API-key auth for api.gitguardian.com and wires it as the coding agent's own AI hook, so the agent's actions are scanned for hardcoded secrets automatically - the real key never enters the sandbox.
+description: Installs the GitGuardian CLI (ggshield) with proxy-injected API-key auth for api.gitguardian.com and wires it as a Claude Code AI hook, so the agent's actions are scanned for hardcoded secrets automatically - the real key never enters the sandbox.
 
-# Which coding agent's AI hook ggshield wires itself into. ggshield's AI-hook
-# support covers exactly these four agents; each reads a different hook file, so
-# the hook is agent-specific and cannot be one-size-fits-all. Set it to match
-# the agent this sandbox runs:
-#   sbx run --kit docker.io/sbx/gitguardian-kit:latest --kit-arg gitguardian.agent=codex codex
-# Other sbx agents (gemini, droid, kiro, opencode) have no ggshield AI hook -
-# the CLI and manual scanning still work, but there is no automatic enforcement.
-args:
-  agent:
-    default: "claude-code"
-    description: >-
-      Coding agent whose AI hook ggshield registers itself as. One of
-      claude-code, codex, copilot, cursor. Must match the agent the sandbox
-      runs, since each agent reads a different hook file.
-    enum: ["claude-code", "codex", "copilot", "cursor"]
+# ggshield's AI hook is agent-specific: it writes Claude Code's own hook file
+# (~/.claude/settings.json) and the agent instructions describe Claude Code, so
+# layering this onto a codex or copilot sandbox would produce a
+# valid-but-nonsensical result. Affinity turns that into a composition error
+# instead (SPEC-v2 4.3). Codex/Copilot/Cursor variants are separate kits.
+requires:
+  agent: claude
 
 credentials:
   - service: gitguardian
@@ -73,14 +65,14 @@ agentInstructions:
     through the sandbox proxy - `GITGUARDIAN_API_KEY` is a proxy-managed
     placeholder inside the container, never the real key.
 
-    ### Automatic enforcement (AI hook)
+    ### Automatic enforcement (Claude Code hook)
 
-    `ggshield` is installed as an AI hook for this sandbox's agent
-    (`${{ kit.args.agent }}`), so your own actions are scanned for secrets
-    automatically - you do not need to remember to scan manually. If the hook
-    BLOCKS an action, a real secret was detected. Do NOT retry or try to bypass
-    it. Instead: locate the flagged secret, remove it from the code, and tell
-    the user it must be rotated. Only proceed once the secret is gone.
+    `ggshield` is installed as a Claude Code AI hook (`~/.claude/settings.json`),
+    so your own actions are scanned for secrets automatically - you do not need
+    to remember to scan manually. If the hook BLOCKS an action, a real secret
+    was detected. Do NOT retry or try to bypass it. Instead: locate the flagged
+    secret, remove it from the code, and tell the user it must be rotated. Only
+    proceed once the secret is gone.
 
     ### Manual scans
 
@@ -138,7 +130,7 @@ setup:
       user: "0"
       description: "Install ggshield v1.53.0, version+digest pinned"
 
-    # Install ggshield as the agent's AI hook. Unlike a git pre-commit hook,
+    # Install ggshield as the Claude Code AI hook. Unlike a git pre-commit hook,
     # this fires inside the agent's own tool loop and scans the content the
     # agent produces - putting the secret scan directly on the agent's
     # authorized output path, which is exactly the surface this sandbox exists
@@ -149,7 +141,8 @@ setup:
     # scope it to the AI hook only: --no-git-hooks (the kit deliberately does
     # not gate git) and --no-honeytokens (the scan-scoped token can't plant one,
     # and a honeytoken isn't this kit's job). It is idempotent - re-runs add
-    # only what's missing. The target agent comes from the `agent` arg.
+    # only what's missing. (ggshield's own agent id for Claude Code is
+    # `claude-code`; the kit's sbx-agent affinity above is `claude`.)
     #
     # MUST run as the agent user (uid 1000), NOT root: setup.install defaults to
     # user "0", which would write the hook under root's HOME (/root/...) where
@@ -157,7 +150,7 @@ setup:
     # `ggshield machine doctor`.
     - command: |
         set -euo pipefail
-        ggshield machine setup --agent ${{ kit.args.agent }} --no-git-hooks --no-honeytokens
-        echo "ggshield AI hook installed for agent: ${{ kit.args.agent }}"
+        ggshield machine setup --agent claude-code --no-git-hooks --no-honeytokens
+        echo "ggshield AI hook installed (~/.claude/settings.json)"
       user: "1000"
-      description: "Install ggshield as the agent's AI hook (agent user)"
+      description: "Install ggshield as a Claude Code AI hook (agent user)"
