@@ -24,7 +24,8 @@ except Exception:
     pass  # embedded engines don't authenticate
 db.use(cfg["db"]["namespace"], "graph_demo")
 
-# Re-runnable: start from a clean slate each time.
+# Wipe demo tables first so re-running doesn't error on the fixed record IDs
+# (CREATE fails if the record already exists); each run starts from a clean slate.
 for t in ("person", "city", "visited"):
     db.query(f"REMOVE TABLE IF EXISTS {t};")
 
