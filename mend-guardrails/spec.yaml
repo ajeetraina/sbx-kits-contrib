@@ -95,10 +95,6 @@ setup:
       description: Check python3 >= 3.11
     - command: |
         set -euo pipefail
-        if [ -z "${MEND_KEY:-}" ]; then
-          echo "mend-guardrails kit requires MEND_KEY (sbx run -e)" >&2
-          exit 1
-        fi
         SRC='${{ kit.args.pythonSrc }}'
         if [ -n "$SRC" ]; then
           if [ ! -d "$SRC" ] || [ ! -f "$SRC/pyproject.toml" ]; then
@@ -111,15 +107,26 @@ setup:
           python3 -m pip install --break-system-packages \
             --progress-bar on --timeout 120 --retries 5 \
             -e "${SRC}[server]"
-        else
+        elif [ -n "${MEND_KEY:-}" ]; then
           echo "pip install mend-guardrails[server]>=0.0.18b0 (PyPI, Mend extra-index, spaCy)"
           enc=$(python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["MEND_KEY"], safe=""))')
           python3 -m pip install --break-system-packages \
             --progress-bar on --timeout 120 --retries 5 \
             --extra-index-url "https://mend:${enc}@downloads.mend.io/guardrails/" \
             'mend-guardrails[server]>=0.0.18b0'
+        else
+          # MEND_KEY is a runtime secret (sbx run -e). It is absent when the kit
+          # is built or validated without secrets — e.g. CI's install-execution
+          # TCK. The authenticated Mend package index needs it, so we install
+          # here only when the key is present at create time and otherwise skip
+          # cleanly (exit 0). The server is installed once the sandbox is
+          # created with MEND_KEY; the startup script and mend-guard-text retry
+          # /health, so a not-yet-installed server is a clear runtime error, not
+          # a broken build.
+          echo "mend-guardrails: MEND_KEY not set; skipping server install." >&2
+          echo "mend-guardrails: create the sandbox with 'sbx run -e MEND_KEY=...' to install the server." >&2
         fi
-      description: pip install mend-guardrails[server]
+      description: pip install mend-guardrails[server] (when MEND_KEY / pythonSrc present)
     - command: |
         set -euo pipefail
         chmod +x /home/agent/.local/bin/mend-guard-text \
@@ -140,7 +147,11 @@ setup:
         if [ -d /etc/profile.d ]; then
           printf '. %s\n' "$AGENT_ENV" > /etc/profile.d/mend-guardrails-noproxy.sh
         fi
-        command -v mend-guardrails-server
+        # Non-fatal: the server is only present when the prior step installed it
+        # (MEND_KEY / pythonSrc set). A secret-less build (e.g. CI) legitimately
+        # has no server yet, so don't fail the install here.
+        command -v mend-guardrails-server \
+          || echo "mend-guardrails: server not installed yet (create the sandbox with MEND_KEY via 'sbx run -e')." >&2
       description: chmod helpers, Codex config, shell rc hooks
   startup:
     - command: ["/home/agent/.local/bin/mend-guardrails-sandbox-start"]
