@@ -1,4 +1,4 @@
-# grafana - Grafana MCP server (local)
+# grafana 
 
 A mixin kit that installs the official [Grafana MCP server](https://github.com/grafana/mcp-grafana) (`mcp-grafana`) plus the `grafana-client` Python library, pre-wired to a **local Grafana** on the host: search dashboards, list datasources, and run Prometheus/Loki queries. No cloud account, no API token.
 
