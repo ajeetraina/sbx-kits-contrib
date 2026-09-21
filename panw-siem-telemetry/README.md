@@ -1,6 +1,6 @@
-# siem-telemetry - forward sandbox telemetry to a SIEM
+# panw-siem-telemetry - forward sandbox telemetry to a SIEM
 
-A mixin kit that ships sandbox observability (process, network, file, and agent-activity logs) to a **SIEM HTTP event collector** via a background [Fluent Bit](https://fluentbit.io/) forwarder, for dashboards, correlation, and automated response. Part of the Palo Alto Networks (PANW) integration alongside [`endpoint-enforcement`](../endpoint-enforcement/); it targets Cortex XSIAM's HTTP Collector but works with any HTTP event collector.
+A mixin kit that ships sandbox observability (process, network, file, and agent-activity logs) to a **SIEM HTTP event collector** via a background [Fluent Bit](https://fluentbit.io/) forwarder, for dashboards, correlation, and automated response. Part of the Palo Alto Networks (PANW) integration alongside [`panw-endpoint-enforcement`](../panw-endpoint-enforcement/); it targets Cortex XSIAM's HTTP Collector but works with any HTTP event collector.
 
 Pairs with any base agent.
 
@@ -19,14 +19,14 @@ The proxy swaps the placeholder for the real token on outbound requests to the c
 Set your collector host (and path, if it is not the default):
 
 ```console
-sbx run --kit "docker.io/sbx/siem-telemetry-kit:latest" --kit-arg siem-telemetry.siemCollectorHost=collector.example.com claude
+sbx run --kit "docker.io/sbx/panw-siem-telemetry-kit:latest" --kit-arg panw-siem-telemetry.siemCollectorHost=collector.example.com claude
 ```
 
 Or target this repo directly over git, or a local clone:
 
 ```console
-sbx run --kit "git+https://github.com/docker/sbx-kits-contrib.git#dir=siem-telemetry" --kit-arg siem-telemetry.siemCollectorHost=collector.example.com claude
-sbx run --kit ./siem-telemetry/ --kit-arg siem-telemetry.siemCollectorHost=collector.example.com claude
+sbx run --kit "git+https://github.com/docker/sbx-kits-contrib.git#dir=panw-siem-telemetry" --kit-arg panw-siem-telemetry.siemCollectorHost=collector.example.com claude
+sbx run --kit ./panw-siem-telemetry/ --kit-arg panw-siem-telemetry.siemCollectorHost=collector.example.com claude
 ```
 
 `siemCollectorHost` defaults to a placeholder (`siem-collector.example.com`), so the kit installs and validates without the arg, but telemetry has nowhere to ship until you set it.

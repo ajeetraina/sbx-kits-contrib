@@ -1,6 +1,6 @@
-# endpoint-enforcement - sandbox enforcement marker
+# panw-endpoint-enforcement - sandbox enforcement marker
 
-A mixin kit that marks agent processes as running inside a sandbox, so a host-side endpoint security policy engine can **permit sandbox-wrapped agents while denying any agent process that spawns outside a sandbox**. Part of the Palo Alto Networks (PANW) integration alongside [`siem-telemetry`](../siem-telemetry/).
+A mixin kit that marks agent processes as running inside a sandbox, so a host-side endpoint security policy engine can **permit sandbox-wrapped agents while denying any agent process that spawns outside a sandbox**. Part of the Palo Alto Networks (PANW) integration alongside [`panw-siem-telemetry`](../panw-siem-telemetry/).
 
 The kit sets an environment marker (`SANDBOX_ENFORCED=1` plus a marker id) and writes a stable on-disk marker file the endpoint agent can attest against. It reaches no network and holds no secret.
 
@@ -9,20 +9,20 @@ Pairs with any base agent.
 ## Usage
 
 ```console
-sbx run --kit "docker.io/sbx/endpoint-enforcement-kit:latest" claude
+sbx run --kit "docker.io/sbx/panw-endpoint-enforcement-kit:latest" claude
 ```
 
 Or target this repo directly over git, or a local clone:
 
 ```console
-sbx run --kit "git+https://github.com/docker/sbx-kits-contrib.git#dir=endpoint-enforcement" claude
-sbx run --kit ./endpoint-enforcement/ claude
+sbx run --kit "git+https://github.com/docker/sbx-kits-contrib.git#dir=panw-endpoint-enforcement" claude
+sbx run --kit ./panw-endpoint-enforcement/ claude
 ```
 
 The identity string the host policy keys on defaults to `sandbox-wrapped`. Override it to match your endpoint policy:
 
 ```console
-sbx run --kit ./endpoint-enforcement/ --kit-arg endpoint-enforcement.markerId=acme-sandbox claude
+sbx run --kit ./panw-endpoint-enforcement/ --kit-arg panw-endpoint-enforcement.markerId=acme-sandbox claude
 ```
 
 ## How it works

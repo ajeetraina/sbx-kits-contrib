@@ -1,7 +1,7 @@
 schemaVersion: "2"
 kind: mixin
-name: siem-telemetry
-displayName: SIEM Telemetry Forwarder
+name: panw-siem-telemetry
+displayName: PANW SIEM Telemetry Forwarder
 description: >-
   Ships sandbox observability (process, network, file, and agent-activity logs)
   to a SIEM HTTP event collector for dashboards, correlation, and automated

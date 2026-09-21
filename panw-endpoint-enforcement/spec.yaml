@@ -1,7 +1,7 @@
 schemaVersion: "2"
 kind: mixin
-name: endpoint-enforcement
-displayName: Endpoint Enforcement Marker
+name: panw-endpoint-enforcement
+displayName: PANW Endpoint Enforcement Marker
 description: >-
   Marks agent processes as running inside a sandbox so a host-side endpoint
   security policy engine can permit sandbox-wrapped agents while denying any
