@@ -440,6 +440,32 @@ docker build -t docker.io/sbx/openclaw-image:latest openclaw
 | `Sandbox image not found: docker.io/sbx/shell-docker-image:latest. Build or pull it first.` | The first-boot pull of the tool-call image has not landed yet. Check `~/.openclaw/sandbox-image-pull.log`. |
 | A newly bound secret changes nothing | Bindings are wired at create time. Create a fresh sandbox. |
 | `remote model catalog refresh failed` on every gateway start | Expected. The catalog host is deliberately outside `network.allow` (see `spec.yaml`); the refresh is warn-only and the gateway reports ready regardless. |
+| A skill says to run `brew install …` (then `brew: command not found`) | The skill's install docs are written for a macOS host; this sandbox is Linux with no Homebrew. The brew step is the skill's, not this kit's — install the tool's Linux binary into `~/.local/bin` instead. See [Installing a skill's CLI tool](#installing-a-skills-cli-tool). |
+
+### Installing a skill's CLI tool
+
+OpenClaw skills pulled from ClawHub often ship a companion CLI, and some skills'
+install instructions assume a macOS laptop and tell you to `brew install …`.
+There is no Homebrew in this sandbox (it is Linux), and bootstrapping it is the
+wrong path — the `agent` user has passwordless sudo, so a half-finished
+Homebrew-for-Linux install just leaves cruft to no end.
+
+Fetch the tool's prebuilt **Linux** binary into `~/.local/bin` instead — it is
+on `PATH`, writable by `agent`, and needs no sudo and no brew. For example, the
+`gog` (Google Workspace) skill's `gogcli`:
+
+```console
+V=0.48.0; A=$(uname -m | grep -q aarch64 && echo arm64 || echo amd64)
+mkdir -p ~/.local/bin /tmp/gogcli
+curl -fsSL "https://github.com/openclaw/gogcli/releases/download/v${V}/gogcli_${V}_linux_${A}.tar.gz" -o /tmp/gogcli.tgz
+# The tarball carries a `.` entry whose perms tar cannot set here; the warning
+# is harmless (the `gog` binary still extracts), so tolerate a non-zero tar exit.
+tar --no-same-permissions --no-same-owner -xzf /tmp/gogcli.tgz -C /tmp/gogcli 2>/dev/null || true
+install -m 0755 /tmp/gogcli/gog ~/.local/bin/gog && gog --version
+```
+
+The same shape works for any skill's CLI: grab its `linux_amd64` / `linux_arm64`
+release asset rather than running a macOS package manager inside the sandbox.
 
 ## Debugging
 
